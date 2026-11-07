@@ -3,38 +3,75 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
+import operation.Operation;
 
 public class Client {
-    void main() {
-        try {
-            // Étape 1
-            Socket socket = new Socket("localhost", 1234);
-            IO.println("Connecté au serveur");
 
-            // Étape 2
+    public static void main(String[] args) {
+
+        try {
+            // Etape 1 : Connexion au serveur
+            Socket socket = new Socket("localhost", 1234);
+
+            System.out.println("Connecté au serveur");
+
+            // Etape 2 : Lecture au clavier
             BufferedReader clavier = new BufferedReader(
                     new InputStreamReader(System.in)
             );
 
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream())
+            System.out.println("Donner le premier operande :");
+            int a = Integer.parseInt(clavier.readLine());
+
+            System.out.println("Donner l'operateur (+, -, *, /) :");
+            String op = clavier.readLine();
+
+            System.out.println("Donner le deuxieme operande :");
+            int b = Integer.parseInt(clavier.readLine());
+
+            // Verification de l'operateur
+            if (op.length() != 1 ||
+                    "+-*/".indexOf(op.charAt(0)) == -1) {
+                System.out.println("Operateur invalide !");
+                socket.close();
+                return;
+            }
+
+            if (op.charAt(0) == '/' && b == 0) {
+                System.out.println("Division par zero impossible !");
+                socket.close();
+                return;
+            }
+
+            // Etape 3 : Creation de l'objet Operation
+            Operation operation = new Operation(a, b, op.charAt(0));
+
+            // Etape 4 : Creation des flux d'objets
+            ObjectOutputStream out = new ObjectOutputStream(
+                    socket.getOutputStream()
+            );
+            out.flush();
+
+            ObjectInputStream in = new ObjectInputStream(
+                    socket.getInputStream()
             );
 
-            PrintStream out = new PrintStream(socket.getOutputStream());
+            // Etape 5 : Envoi de l'objet au serveur
+            out.writeObject(operation);
+            out.flush();
 
-            // Étape 3
-            IO.println("Donner l'operation (exemple : 55 * 25) :");
-            String msg = clavier.readLine();
+            // Etape 6 : Reception du resultat
+            int resultat = (Integer) in.readObject();
 
-            out.println(msg);
+            System.out.println("Resultat reçu du serveur : " + resultat);
 
-            // Étape 4
-            String resultat = in.readLine();
-            IO.println("Résultat reçu du serveur : " + resultat);
-
+            // Etape 7 : Fermeture
+            in.close();
+            out.close();
             socket.close();
 
-        } catch (IOException _) {
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
 }

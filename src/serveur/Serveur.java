@@ -1,59 +1,60 @@
+
 package serveur;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import operation.Operation;
 
 public class Serveur {
-     void main() {
+
+    public static void main(String[] args) {
+
         try {
-            // Étape 1
+            // Etape 1 : Creation du serveur
             ServerSocket serverSocket = new ServerSocket(1234);
-            IO.println("Je suis un serveur en attente la connexion d'un client ");
-            IO.println("Serveur calculatrice en attente de connexion...");
 
-            // Étape 2
+            System.out.println("Serveur en attente de connexion...");
+
+            // Etape 2 : Attente de connexion du client
             Socket socket = serverSocket.accept();
-            IO.println("un client est connecté");
-            //DataInputStream dis = new DataInputStream(socket.getInputStream());
-            //DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
-            // Étape 3
+            System.out.println("Un client est connecte");
 
-            String msg = "";
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream())
+            // Etape 3 : Creation des flux d'objets
+            ObjectInputStream in = new ObjectInputStream(
+                    socket.getInputStream()
             );
-            PrintStream out = new PrintStream(socket.getOutputStream());
-            msg = in.readLine();
-            int x = Integer.parseInt(msg.split(" ")[0]);
-            String op = msg.split(" ")[1];
-            int y = Integer.parseInt(msg.split(" ")[2]);
-            int res;
-            switch (op){
-                case "+":
-                    res = x + y;
-                    break;
-                case "-":
-                    res = x - y;
-                    break;
-                case "*":
-                    res = x * y;
-                    break;
-                case "/":
-                    res = x / y;
-                    break;
-                default:
-                    res = 0;
-                    break;
 
-            }
-            out.println(msg + " = " + res);
+            ObjectOutputStream out = new ObjectOutputStream(
+                    socket.getOutputStream()
+            );
+            out.flush();
 
+            // Etape 4 : Reception de l'objet Operation
+            Operation operation = (Operation) in.readObject();
+
+            System.out.println("Objet Operation reçu");
+
+            // Etape 5 : Calcul
+            int resultat = operation.calculer();
+
+            System.out.println("Calcul effectue : " + resultat);
+
+            // Etape 6 : Envoi du resultat au client
+            out.writeObject(resultat);
+            out.flush();
+
+            System.out.println("Resultat envoye au client");
+
+            // Etape 7 : Fermeture
+            in.close();
+            out.close();
             socket.close();
             serverSocket.close();
-        } catch (IOException _) {
+
+        } catch (Exception e) {
+            System.out.println("Erreur serveur : " + e.getMessage());
         }
     }
 }
-
-
